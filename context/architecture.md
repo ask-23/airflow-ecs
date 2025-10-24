@@ -29,3 +29,5 @@ Web/API: /health with a generous startPeriod (Airflow can be slow on first boot)
 Scheduler/worker: container-level airflow jobs check or /health. Stagger service deployments to avoid first-run stampedes.
 
 Scaling: Fargate service autoscaling on queue depth & task duration; cap worker concurrency in airflow.cfg to stop thundering herds.
+
+npx claude-flow init airflow-ecs --goal "Build a production-grade Apache Airflow 3.1 environment on AWS ECS (Fargate) using NAT-free architecture, sidecar DAG sync, and Terraform IaC. Your context files are pre-written for you in /context"
