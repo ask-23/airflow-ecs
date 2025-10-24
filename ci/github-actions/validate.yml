@@ -1,0 +1,102 @@
+name: Validate Infrastructure
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'infra/**'
+      - 'app/docker/**'
+
+jobs:
+  terraform-validate:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive infra/
+
+      - name: Terraform Init (Dev)
+        working-directory: infra/envs/dev
+        run: terraform init -backend=false
+
+      - name: Terraform Validate (Dev)
+        working-directory: infra/envs/dev
+        run: terraform validate
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive --format compact infra/
+
+  checkov:
+    name: Checkov Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infra/
+          framework: terraform
+          soft_fail: false
+          output_format: cli
+
+  opa-policy:
+    name: OPA Policy Validation (NO NAT CHECK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+
+      - name: Check for NAT Gateways (CRITICAL - MUST FAIL)
+        run: |
+          echo "Checking for NAT gateways..."
+          if grep -r "aws_nat_gateway" infra/; then
+            echo "ERROR: NAT gateway detected! This violates the no-NAT policy."
+            exit 1
+          fi
+          echo "SUCCESS: No NAT gateways found"
+
+      - name: Check for Public Subnets
+        run: |
+          echo "Checking for public subnets..."
+          if grep -r "map_public_ip_on_launch.*true" infra/; then
+            echo "ERROR: Public subnet detected!"
+            exit 1
+          fi
+          echo "SUCCESS: No public subnets found"
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build All Images
+        run: |
+          docker build -t airflow-base:test app/docker/airflow-base/
+          docker build -t airflow-web:test app/docker/airflow-web/
+          docker build -t airflow-scheduler:test app/docker/airflow-scheduler/
+          docker build -t airflow-worker:test app/docker/airflow-worker/
+          docker build -t sidecar-s3sync:test app/docker/sidecar-s3sync/

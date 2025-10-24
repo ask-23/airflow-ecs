@@ -1,0 +1,49 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.0"
+
+      - name: Terraform Plan and Apply
+        working-directory: infra/envs/dev
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Build and Push Images
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 381492153064.dkr.ecr.us-east-1.amazonaws.com
+          
+          docker build -t 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-base:latest app/docker/airflow-base/
+          docker push 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-base:latest
+          
+          docker build -t 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-web:latest app/docker/airflow-web/
+          docker push 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-web:latest
+          
+          docker build -t 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-scheduler:latest app/docker/airflow-scheduler/
+          docker push 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-scheduler:latest
+          
+          docker build -t 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-worker:latest app/docker/airflow-worker/
+          docker push 381492153064.dkr.ecr.us-east-1.amazonaws.com/airflow-worker:latest
+          
+          docker build -t 381492153064.dkr.ecr.us-east-1.amazonaws.com/sidecar-s3sync:latest app/docker/sidecar-s3sync/
+          docker push 381492153064.dkr.ecr.us-east-1.amazonaws.com/sidecar-s3sync:latest

@@ -1,0 +1,24 @@
+name: Sync DAGs to S3
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'dags/**'
+
+jobs:
+  sync:
+    name: Sync DAGs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+
+      - name: Sync to S3 Dev
+        run: |
+          aws s3 sync ./dags s3://pathwai-airflow3-dags/dev/ --delete --exact-timestamps
+          echo "DAGs synced to dev environment"

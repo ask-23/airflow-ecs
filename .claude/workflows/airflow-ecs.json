@@ -1,0 +1,145 @@
+{
+    "name": "Airflow ECS Build Workflow",
+    "description": "Spawns coordinated Claude agents to design, provision, package, secure, and validate an Apache Airflow 3.1 ECS/Fargate deployment.",
+    "parallel": true,
+    "tasks": [
+        {
+            "id": "architecture-task",
+            "name": "Define Architecture",
+            "type": "design",
+            "description": "Read /Users/admin/git/airflow-ecs/context/architecture.md and /Users/admin/git/airflow-ecs/context/interfaces.md, finalize overall system architecture, and produce ADR summaries.",
+            "tools": [
+                "View",
+                "Edit",
+                "GlobTool",
+                "GrepTool",
+                "Bash"
+            ],
+            "config": "/Users/admin/git/airflow-ecs/context/architecture.md"
+        },
+        {
+            "id": "infra-task",
+            "name": "Implement Infrastructure IaC",
+            "type": "implementation",
+            "description": "Provision AWS ECS/Fargate, RDS, Redis, EFS, ALB, and IAM per /Users/admin/git/airflow-ecs/context/infra_spec.md using Terraform. Ensure NAT-free networking and endpoint-only egress.",
+            "tools": [
+                "View",
+                "Edit",
+                "Replace",
+                "GlobTool",
+                "GrepTool",
+                "LS",
+                "Bash"
+            ],
+            "config": "/Users/admin/git/airflow-ecs/context/infra_spec.md"
+        },
+        {
+            "id": "packaging-task",
+            "name": "Build Airflow Images",
+            "type": "implementation",
+            "description": "Build Docker images for Airflow web, scheduler, worker, and s3-sync sidecar according to /Users/admin/git/airflow-ecs/context/app_packaging.md.",
+            "tools": [
+                "View",
+                "Edit",
+                "Replace",
+                "GlobTool",
+                "GrepTool",
+                "LS",
+                "Bash"
+            ],
+            "config": "/Users/admin/git/airflow-ecs/context/app_packaging.md"
+        },
+        {
+            "id": "security-task",
+            "name": "Apply Security and Cost Guardrails",
+            "type": "analysis",
+            "description": "Implement IAM least privilege, KMS encryption, TLS, and cost monitoring policies per /Users/admin/git/airflow-ecs/context/sec_net_cost.md.",
+            "tools": [
+                "View",
+                "Edit",
+                "GlobTool",
+                "GrepTool",
+                "Bash"
+            ],
+            "config": "/Users/admin/git/airflow-ecs/context/sec_net_cost.md"
+        },
+        {
+            "id": "qa-task",
+            "name": "Validate and Test Deployment",
+            "type": "testing",
+            "description": "Run QA and SRE acceptance checks from /Users/admin/git/airflow-ecs/context/qa_sre_acceptance.md including synthetic DAG runs and scaling tests.",
+            "tools": [
+                "View",
+                "Edit",
+                "Replace",
+                "GlobTool",
+                "GrepTool",
+                "Bash",
+                "BatchTool"
+            ],
+            "config": "/Users/admin/git/airflow-ecs/context/qa_sre_acceptance.md"
+        }
+    ],
+    "agents": [
+        {
+            "id": "architect-agent",
+            "type": "architect",
+            "capabilities": [
+                "system-design",
+                "documentation",
+                "diagramming"
+            ],
+            "assignedTasks": [
+                "architecture-task"
+            ]
+        },
+        {
+            "id": "infra-agent",
+            "type": "engineer",
+            "capabilities": [
+                "terraform",
+                "aws-networking",
+                "automation"
+            ],
+            "assignedTasks": [
+                "infra-task"
+            ]
+        },
+        {
+            "id": "packager-agent",
+            "type": "engineer",
+            "capabilities": [
+                "docker",
+                "airflow",
+                "build-systems"
+            ],
+            "assignedTasks": [
+                "packaging-task"
+            ]
+        },
+        {
+            "id": "security-agent",
+            "type": "analyst",
+            "capabilities": [
+                "iam-policy",
+                "kms",
+                "cost-optimization"
+            ],
+            "assignedTasks": [
+                "security-task"
+            ]
+        },
+        {
+            "id": "qa-agent",
+            "type": "tester",
+            "capabilities": [
+                "integration-testing",
+                "chaos-testing",
+                "observability"
+            ],
+            "assignedTasks": [
+                "qa-task"
+            ]
+        }
+    ]
+}

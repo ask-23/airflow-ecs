@@ -1,0 +1,15 @@
+cat > ci/github-actions/receipt-gate.yml <<'YML'
+name: receipt-gate
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure receipts exist and are non-empty
+        run: |
+          for a in architect infra packager secnet qa; do
+            test -s "docs/receipts/${a}.md" || { echo "Missing receipt for $a"; exit 1; }
+          done
+YML
+

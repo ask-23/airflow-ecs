@@ -1,0 +1,17 @@
+# Checkov Security Scanning Configuration
+
+framework:
+  - terraform
+
+soft-fail: false
+
+check:
+  - CKV_AWS_*
+
+skip-check:
+  - CKV_AWS_21  # S3 versioning (can be enabled later)
+  
+output: cli
+
+compact: true
+quiet: false
